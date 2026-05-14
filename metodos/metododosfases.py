@@ -1,8 +1,9 @@
 # ======================================
 # MÉTODO DOS FASES
 # ======================================
+import customtkinter as ctk
 
-def resolver_dos_fases(datos):
+def metodo_dos_fases(contenedor, datos):
 
     """
     Recibe:
@@ -15,11 +16,11 @@ def resolver_dos_fases(datos):
         pasos y solución
     """
 
-    print("=== MÉTODO DOS FASES ===")
 
-    print(datos)
+    titulo = ctk.CTkLabel(
+        contenedor,
+        text="no",
+        font=("Arial", 28, "bold")
+    )
 
-    return {
-        "estado": "ok",
-        "mensaje": "Método dos fases ejecutado correctamente"
-    }
+    titulo.pack(pady=20)

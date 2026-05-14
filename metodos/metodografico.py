@@ -2,24 +2,24 @@
 # MÉTODO DOS FASES
 # ======================================
 
-def resolver_dos_fases(datos):
+import customtkinter as ctk
+import numpy as np
 
-    """
-    Recibe:
-        datos -> diccionario con:
-            funcion_objetivo
-            restricciones
-            metodo
 
-    Retorna:
-        pasos y solución
-    """
+def metodo_grafico(contenedor, datos):
+    c = datos.get("funcion_objetivo")
+    r = datos.get("restricciones")
+    
+    j = []
+    z = []
+    for restricciones in r:
+        j.append(restricciones['coeficientes'])
+        z.append(restricciones['resultado'])
 
-    print("=== MÉTODO DOS FASES ===")
+    
+    A= np.array(j)
 
-    print(datos)
+    B = np.array(z)
 
-    return {
-        "estado": "ok",
-        "mensaje": "Método dos fases ejecutado correctamente"
-    }
+    print("Matriz A:", A)
+    print("Vector b:", B)

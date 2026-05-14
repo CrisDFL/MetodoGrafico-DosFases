@@ -9,6 +9,12 @@ from ui.formulario import (
     generar_formulario,
     obtener_datos
 )
+from metodos.metodografico import (
+    metodo_grafico
+)
+from metodos.metododosfases import (
+    metodo_dos_fases
+)
 
 # ==========================================
 # CONFIGURACIÓN GENERAL
@@ -33,7 +39,7 @@ app.resizable(True, True)
 # ==========================================
 
 metodo_escogido = ctk.StringVar(value="grafico")
-
+tipo_problema = ctk.StringVar(value="max")
 variables_texto = ctk.StringVar()
 
 # ==========================================
@@ -41,9 +47,7 @@ variables_texto = ctk.StringVar()
 # ==========================================
 
 def limpiar_frame(frame):
-
     for widget in frame.winfo_children():
-
         widget.destroy()
 
 
@@ -52,7 +56,6 @@ def limpiar_frame(frame):
 # ==========================================
 
 def verificar_variables(*args):
-
     valor = variables_texto.get()
 
     # ======================================
@@ -60,14 +63,11 @@ def verificar_variables(*args):
     # ======================================
 
     if valor == "":
-
         r_grafico.configure(state="normal")
-
         mensaje_estado.configure(
             text="Configure el problema",
             text_color="white"
         )
-
         return
 
     # ======================================
@@ -75,12 +75,10 @@ def verificar_variables(*args):
     # ======================================
 
     if not es_entero_positivo(valor):
-
         mensaje_estado.configure(
             text="Ingrese un número válido",
             text_color="red"
         )
-
         return
 
     cantidad_variables = int(valor)
@@ -90,20 +88,15 @@ def verificar_variables(*args):
     # ======================================
 
     if not validar_metodo_grafico(cantidad_variables):
-
         r_grafico.configure(state="disabled")
-
         metodo_escogido.set("dos_fases")
-
         mensaje_estado.configure(
             text="Método gráfico deshabilitado para más de 2 variables",
             text_color="orange"
         )
 
     else:
-
         r_grafico.configure(state="normal")
-
         mensaje_estado.configure(
             text="Método gráfico disponible",
             text_color="lightgreen"
@@ -115,22 +108,17 @@ def verificar_variables(*args):
 # ==========================================
 
 def confirmar():
-
     variables = entry_variables.get()
-
     restricciones = entry_restricciones.get()
 
     # ======================================
     # VALIDAR CAMPOS VACÍOS
     # ======================================
-
     if variables == "" or restricciones == "":
-
         mensaje_estado.configure(
             text="Complete todos los campos",
             text_color="red"
         )
-
         return
 
     # ======================================
@@ -138,308 +126,90 @@ def confirmar():
     # ======================================
 
     if not es_entero_positivo(variables):
-
         mensaje_estado.configure(
             text="Número de variables inválido",
             text_color="red"
         )
-
         return
 
     # ======================================
     # VALIDAR RESTRICCIONES
     # ======================================
-
     if not es_entero_positivo(restricciones):
-
         mensaje_estado.configure(
             text="Número de restricciones inválido",
             text_color="red"
         )
-
         return
 
     # ======================================
     # CONVERTIR A ENTEROS
     # ======================================
-
     variables = int(variables)
-
     restricciones = int(restricciones)
 
     # ======================================
     # LIMPIAR FORMULARIO
     # ======================================
-
     limpiar_frame(frame_formulario)
 
     # ======================================
     # GENERAR FORMULARIO
     # ======================================
-
     generar_formulario(
         frame_formulario,
         variables,
-        restricciones
+        restricciones,
+        tipo_problema.get()
     )
 
     mensaje_estado.configure(
         text="Formulario generado correctamente",
         text_color="lightgreen"
     )
-
+    btn_resolver = ctk.CTkButton(
+        frame_formulario,
+        text="Resolver",
+        width=220,
+        height=50,
+        font=("Arial", 18, "bold"),
+        command=resolver
+    )
+    btn_resolver.pack(
+        side="left",
+        padx=10,
+        pady=20
+    )
 
 # ==========================================
 # RESOLVER
 # ==========================================
-
 def resolver():
-
     datos = obtener_datos()
-
     metodo = metodo_escogido.get()
-
-    # ======================================
-    # LIMPIAR RESULTADOS
-    # ======================================
-
-    limpiar_frame(frame_resultados)
-
-    # ======================================
-    # TÍTULO RESULTADOS
-    # ======================================
-
-    titulo_resultado = ctk.CTkLabel(
-        frame_resultados,
-        text="Resultados del Problema",
-        font=("Arial", 28, "bold")
-    )
-
-    titulo_resultado.pack(pady=(20, 10))
-
-    # ======================================
-    # MÉTODO SELECCIONADO
-    # ======================================
-
-    metodo_label = ctk.CTkLabel(
-        frame_resultados,
-        text=f"Método seleccionado: {metodo.upper()}",
-        font=("Arial", 18, "bold"),
-        text_color="cyan"
-    )
-
-    metodo_label.pack(pady=10)
-
-    # ======================================
-    # CAJA DE RESULTADOS
-    # ======================================
-
-    resultado_texto = ctk.CTkTextbox(
-        frame_resultados,
-        width=1100,
-        height=450,
-        font=("Consolas", 16),
-        corner_radius=12
-    )
-
-    resultado_texto.pack(
-        padx=20,
-        pady=20,
-        fill="both",
-        expand=True
-    )
-
-    # ======================================
-    # CONTENIDO
-    # ======================================
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "        INVESTIGACIÓN DE OPERACIONES\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        f"MÉTODO UTILIZADO:\n{metodo.upper()}\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "DATOS INGRESADOS\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        f"{datos}\n\n"
-    )
-
-    # ======================================
-    # SIMULACIÓN TABLA SIMPLEX
-    # ======================================
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "TABLA INICIAL\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "XB     X1     X2     S1     S2     BI\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "----------------------------------------\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "S1      1      2      1      0      8\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "S2      3      2      0      1     12\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "Zj - Cj\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "-3     -5      0      0\n\n"
-    )
-
-    # ======================================
-    # ITERACIONES
-    # ======================================
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "ITERACIÓN 1\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "Variable que entra: X2\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "Variable que sale: S1\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "Pivote: 2\n\n"
-    )
-
-    # ======================================
-    # SOLUCIÓN FINAL
-    # ======================================
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "SOLUCIÓN ÓPTIMA\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "========================================\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "X1 = 4\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "X2 = 2\n\n"
-    )
-
-    resultado_texto.insert(
-        "end",
-        "Z = 26\n"
-    )
-
-    resultado_texto.configure(state="disabled")
-
-    # ======================================
-    # MENSAJE
-    # ======================================
-
-    mensaje_estado.configure(
-        text="Problema resuelto correctamente",
-        text_color="lightgreen"
-    )
+    if metodo == "grafico":
+        mensaje_estado.configure(
+            text="Resolviendo con método gráfico...",
+            text_color="lightblue"
+        )
+        metodo_grafico(frame_formulario, datos)
+    elif metodo == "dos_fases":
+        mensaje_estado.configure(
+            text="Resolviendo con método dos fases...",
+            text_color="lightblue"
+        )
+        metodo_dos_fases(frame_formulario, datos)
 
 
 # ==========================================
 # LIMPIAR
 # ==========================================
-
 def limpiar():
-
     entry_variables.delete(0, "end")
-
     entry_restricciones.delete(0, "end")
-
     metodo_escogido.set("grafico")
-
     r_grafico.configure(state="normal")
-
     limpiar_frame(frame_formulario)
-
-    limpiar_frame(frame_resultados)
-
     mensaje_estado.configure(
         text="Campos limpiados",
         text_color="white"
@@ -488,6 +258,7 @@ frame_principal.pack(
     padx=20,
     pady=20,
     fill="both",
+    side="left",
     expand=True
 )
 
@@ -619,6 +390,43 @@ r_dos_fases = ctk.CTkRadioButton(
 r_dos_fases.pack(pady=8)
 
 # ==========================================
+# TIPO DE PROBLEMA
+# ==========================================
+
+frame_tipo = ctk.CTkFrame(
+    frame_principal
+)
+frame_tipo.pack(
+    pady=30,
+    padx=30,
+)
+
+lbl_tipo = ctk.CTkLabel(
+    frame_tipo,
+    text="Tipo de problema",
+    font=("Arial", 24, "bold")
+)
+lbl_tipo.pack(pady=15)
+
+t_max = ctk.CTkRadioButton(
+    frame_tipo,
+    text="Maximización",
+    variable=tipo_problema,
+    value="max",
+    font=("Arial", 18)
+)
+t_max.pack(pady=8, side="left", padx=10)
+
+t_min = ctk.CTkRadioButton(
+    frame_tipo,
+    text="Minimización",
+    variable=tipo_problema,
+    value="min",
+    font=("Arial", 18)
+)
+t_min.pack(pady=8, side="left", padx=10)
+
+# ==========================================
 # ESTADO
 # ==========================================
 
@@ -655,20 +463,6 @@ btn_confirmar.pack(
     padx=10
 )
 
-btn_resolver = ctk.CTkButton(
-    frame_botones,
-    text="Resolver",
-    width=220,
-    height=50,
-    font=("Arial", 18, "bold"),
-    command=resolver
-)
-
-btn_resolver.pack(
-    side="left",
-    padx=10
-)
-
 btn_limpiar = ctk.CTkButton(
     frame_botones,
     text="Limpiar",
@@ -690,7 +484,7 @@ btn_limpiar.pack(
 # ==========================================
 
 frame_formulario = ctk.CTkScrollableFrame(
-    frame_principal,
+    app,
     width=1150,
     height=300,
     corner_radius=15
@@ -700,26 +494,10 @@ frame_formulario.pack(
     pady=20,
     padx=20,
     fill="both",
+    side = "left",
     expand=True
 )
 
-# ==========================================
-# RESULTADOS
-# ==========================================
-
-frame_resultados = ctk.CTkScrollableFrame(
-    frame_principal,
-    width=1150,
-    height=350,
-    corner_radius=15
-)
-
-frame_resultados.pack(
-    pady=(0, 20),
-    padx=20,
-    fill="both",
-    expand=True
-)
 
 # ==========================================
 # EJECUTAR APP

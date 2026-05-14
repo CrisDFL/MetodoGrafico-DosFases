@@ -17,7 +17,8 @@ simbolos_restricciones = []
 def generar_formulario(
     contenedor,
     variables,
-    restricciones
+    restricciones,
+    tipo_problema
 ):
 
     global entradas_funcion
@@ -76,9 +77,15 @@ def generar_formulario(
 
     frame_variables.pack(pady=15)
 
+    def tipo():
+        if tipo_problema == "min":
+            return "MinZ ="
+        else:
+            return "MaxZ ="
+
     texto_z = ctk.CTkLabel(
         frame_variables,
-        text="Z =",
+        text=tipo(),
         font=("Arial", 22, "bold")
     )
 
