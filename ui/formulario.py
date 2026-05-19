@@ -10,6 +10,7 @@ entradas_restricciones = []
 
 simbolos_restricciones = []
 
+
 # ======================================
 # GENERAR FORMULARIO
 # ======================================
@@ -240,7 +241,7 @@ def generar_formulario(
 # OBTENER DATOS
 # ======================================
 
-def obtener_datos():
+def obtener_datos(tipo_problema):
 
     datos = {}
 
@@ -266,6 +267,7 @@ def obtener_datos():
             funcion_objetivo.append(0)
 
     datos["funcion_objetivo"] = funcion_objetivo
+    datos["tipo_optimizacion"] = tipo_problema
 
     # ======================================
     # RESTRICCIONES

@@ -185,7 +185,7 @@ def confirmar():
 # RESOLVER
 # ==========================================
 def resolver():
-    datos = obtener_datos()
+    datos = obtener_datos(tipo_problema.get())
     metodo = metodo_escogido.get()
     if metodo == "grafico":
         mensaje_estado.configure(
