@@ -176,7 +176,6 @@ def confirmar():
         command=resolver
     )
     btn_resolver.pack(
-        side="left",
         padx=10,
         pady=20
     )
