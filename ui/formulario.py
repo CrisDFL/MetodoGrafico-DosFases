@@ -29,11 +29,8 @@ def generar_formulario(
     # ======================================
     # LIMPIAR VARIABLES
     # ======================================
-
     entradas_funcion = []
-
     entradas_restricciones = []
-
     simbolos_restricciones = []
 
     # ======================================
@@ -195,7 +192,8 @@ def generar_formulario(
             values=["<=", ">=", "="],
             width=90,
             height=40,
-            font=("Arial", 16)
+            font=("Arial", 16),
+            state="readonly"
         )
 
         simbolo.set("<=")

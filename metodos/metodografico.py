@@ -28,6 +28,11 @@ def es_factible(A, B, S, punto):
                 return False
     return all(punto >= 0)
 
+# Funcion para identificar si es entero o decimal
+def fmt(valor):
+    return f"{int(valor)}" if float(valor).is_integer() else f"{valor:.2f}"
+
+# Funcion principal
 def metodo_grafico(contenedor, datos):
     c = datos.get("funcion_objetivo")
     r = datos.get("restricciones")
@@ -62,53 +67,85 @@ def metodo_grafico(contenedor, datos):
             continue
     #------------------------------------------------------------------
     # Intersecciones con los ejes
+    texto += "\n" + "═" * 40 + "\n"
+    texto += "ANÁLISIS DE RESTRICCIONES\n"
+    texto += "═" * 40 + "\n\n"
+
     for i in range(n_restricciones):
+        texto += f"  ▸ Restricción {i+1}:  {A[i][0]}X₁ + {A[i][1]}X₂  {S[i]}  {B[i]}\n"
+        texto += "  " + "─" * 45 + "\n"
+
         # X1 = 0, despeja X2
         if A[i][1] != 0:
-            punto = np.array([0, B[i] / A[i][1]])
+            val = B[i] / A[i][1]
+            punto = np.array([0, val])
+            texto += f"    • Intersección con X₁ = 0:\n"
+            texto += f"      {A[i][1]}X₂ = {B[i]}  →  X₂ = {fmt(val)}\n"
+            texto += f"      Punto: (0, {fmt(val)})\n"
             if es_factible(A, B, S, punto):
                 vertices.append(punto)
+                texto += f"      ✔ Factible → se agrega como vértice\n"
+            else:
+                texto += f"      ✘ No factible → descartado\n"
 
         # X2 = 0, despeja X1
         if A[i][0] != 0:
-            punto = np.array([B[i] / A[i][0], 0])
+            val = B[i] / A[i][0]
+            punto = np.array([val, 0])
+            texto += f"    • Intersección con X₂ = 0:\n"
+            texto += f"      {A[i][0]}X₁ = {B[i]}  →  X₁ = {fmt(val)}\n"
+            texto += f"      Punto: ({fmt(val)}, 0)\n"
             if es_factible(A, B, S, punto):
                 vertices.append(punto)
+                texto += f"      ✔ Factible → se agrega como vértice\n"
+            else:
+                texto += f"      ✘ No factible → descartado\n"
 
-        # Impresion de operaciones
-        texto += f"Restricción {i+1}: {A[i][0]}X1 + {A[i][1]}X2 {S[i]} {B[i]}\n"
-
-        # Intersección con X1 = 0
-        if A[i][1] != 0:
-            texto += f"Intersección con X1=0 -> {A[i][1]}X2 = {B[i]} -> X2 = {B[i] / A[i][1]}\n"
-
-        # Intersección con X2 = 0
-        if A[i][0] != 0:
-            texto += f"Intersección con X2=0 -> {A[i][0]}X1 = {B[i]} -> X1 = {B[i] / A[i][0]}\n"
-
+        texto += "\n"
 
     # El origen
+    texto += "═" * 40 + "\n"
+    texto += "VERIFICACIÓN DEL ORIGEN\n"
+    texto += "═" * 40 + "\n\n"
+
     origen = np.array([0, 0])
     if es_factible(A, B, S, origen):
         vertices.append(origen)
+        texto += "  ✔ El origen (0, 0) es factible → se agrega como vértice\n\n"
+    else:
+        texto += "  ✘ El origen (0, 0) no es factible → descartado\n\n"
 
-    for i in range(len(vertices)):
-        texto += f"Vértices de la región factible V{i+1}: {vertices[i]}\n"
-    #------------------------------------------------------------------------------------------------
-    # Evaluar la función objetivo en cada vértice
+
+    #-----------------------------------------------------
+    # EVALUACIÓN DE LA FUNCIÓN OBJETIVO
+    texto += "═" * 40 + "\n"
+    texto += "EVALUACIÓN DE LA FUNCIÓN OBJETIVO\n"
+    texto += "═" * 40 + "\n\n"
+
     resultados = []
-
-    for punto in vertices:
+    for i, punto in enumerate(vertices):
         z = np.dot(c, punto)
         resultados.append((punto, z))
-        texto += f"Evaluando función objetivo en el vértice {punto} -> Z = {z}\n"
+        texto += f"  V{i+1}  ({fmt(punto[0])}, {fmt(punto[1])})  →  Z = {fmt(z)}\n"
+
+    texto += "\n"
     
+    # ----------------------------------------------------
+    # RESULTADO ÓPTIMO
+    texto += "═" * 40 + "\n"
+
     if datos.get("tipo_optimizacion") == "max":
         punto_optimo, valor_optimo = max(resultados, key=lambda x: x[1])
+        texto += "SOLUCIÓN ÓPTIMA  (MAXIMIZACIÓN)\n"
     else:
         punto_optimo, valor_optimo = min(resultados, key=lambda x: x[1])
-    
-    texto += f"Punto óptimo: {punto_optimo} con valor óptimo: {valor_optimo}\n"
+        texto += "SOLUCIÓN ÓPTIMA  (MINIMIZACIÓN)\n"
+
+    texto += "═" * 40 + "\n\n"
+    texto += f"  X₁ = {fmt(punto_optimo[0])}\n"
+    texto += f"  X₂ = {fmt(punto_optimo[1])}\n"
+    texto += f"  Z  = {fmt(valor_optimo)}\n\n"
+    texto += "═" * 40 + "\n"
 
     caja = ctk.CTkTextbox(contenedor, width=1100, height=400, font=("Consolas", 14))
     #------------------------------------------------------------------------------------
@@ -143,7 +180,7 @@ def metodo_grafico(contenedor, datos):
     for punto in vertices:
         ax.plot(punto[0], punto[1], "bo", markersize=6)
         ax.annotate(
-            f"({round(punto[0], 2)}, {round(punto[1], 2)})",
+            f"({fmt(punto[0])}, {fmt(punto[1])})",
             xy=(punto[0], punto[1]),
             xytext=(5, 5),
             textcoords="offset points",
@@ -152,7 +189,7 @@ def metodo_grafico(contenedor, datos):
         # Marcar el punto óptimo
         ax.plot(punto_optimo[0], punto_optimo[1], "r*", markersize=15)
         ax.annotate(
-            f"ÓPTIMO\n({round(punto_optimo[0], 2)}, {round(punto_optimo[1], 2)})\nZ={round(valor_optimo, 2)}",
+            f"ÓPTIMO\n({fmt(punto_optimo[0])}, {fmt(punto_optimo[1])})\nZ={fmt(valor_optimo)}",
             xy=(punto_optimo[0], punto_optimo[1]),
             xytext=(10, 10),
             textcoords="offset points",
