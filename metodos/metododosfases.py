@@ -4,37 +4,16 @@
 
 import customtkinter as ctk
 from fractions import Fraction
+from tkinter import ttk
+from ui.estilo import (
+    BG_MAIN, BG_CARD, BG_TABLE_HEAD, BG_TABLE_ROW, BG_TABLE_ALT,
+    BG_PIVOT_COL, BG_PIVOT_CELL, BG_W_ROW, BG_RESULT,
+    TEXT_PRIMARY, TEXT_SECONDARY, TEXT_ACCENT, TEXT_GOLD,
+    TEXT_GREEN, TEXT_RED, TEXT_BLUE, TEXT_PURPLE, TEXT_HEAD,
+    BORDER_COLOR, BORDER_ACCENT,
+    FONT_TITLE, FONT_HEAD, FONT_BODY, FONT_SMALL, FONT_LABEL, FONT_RESULT
+)
 
-# ── Paleta de colores ──────────────────────────────────────────────────
-BG_MAIN       = "#0f1117"   # fondo principal
-BG_CARD       = "#1a1d27"   # tarjetas / secciones
-BG_TABLE_HEAD = "#1e2235"   # cabecera de tabla
-BG_TABLE_ROW  = "#151825"   # filas normales
-BG_TABLE_ALT  = "#191c2a"   # filas alternas
-BG_PIVOT_COL  = "#1a2a1a"   # columna pivote (verde oscuro)
-BG_PIVOT_CELL = "#2d4a1e"   # celda pivote exacta
-BG_W_ROW      = "#1a1a2e"   # fila W / Z
-BG_RESULT     = "#0d1f0d"   # tarjeta resultado final
-
-TEXT_PRIMARY   = "#e8eaf0"
-TEXT_SECONDARY = "#8b92a8"
-TEXT_ACCENT    = "#64d8cb"   # cian
-TEXT_GOLD      = "#ffd166"   # amarillo-oro (pivote)
-TEXT_GREEN     = "#6fcf97"   # verde (óptimo)
-TEXT_RED       = "#eb5757"   # rojo (infactible)
-TEXT_BLUE      = "#7eb8f7"   # azul (Z/W label)
-TEXT_PURPLE    = "#c084fc"   # púrpura (variables básicas)
-TEXT_HEAD      = "#a8b4cc"   # cabeceras columna
-
-BORDER_COLOR   = "#2a2f45"
-BORDER_ACCENT  = "#3d4a6b"
-
-FONT_TITLE  = ("JetBrains Mono", 15, "bold")
-FONT_HEAD   = ("JetBrains Mono", 12, "bold")
-FONT_BODY   = ("JetBrains Mono", 12)
-FONT_SMALL  = ("JetBrains Mono", 11)
-FONT_LABEL  = ("JetBrains Mono", 13, "bold")
-FONT_RESULT = ("JetBrains Mono", 14, "bold")
 
 # ── Helpers de fracción ───────────────────────────────────────────────
 def fmt(valor):
@@ -98,83 +77,110 @@ def separador(parent):
 def dibujar_tabla(parent, columnas, variables_basicas, matriz,
                   fila_extra, label_extra,
                   col_pivote_idx=None, fila_pivote_idx=None):
-    """
-    Dibuja un tableau completo con:
-    - Cabecera resaltada
-    - Filas alternas
-    - Columna pivote en verde suave
-    - Celda pivote resaltada en dorado
-    - Fila W/Z con fondo especial
-    """
-    container = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=10,
-                             border_width=1, border_color=BORDER_COLOR)
-    container.pack(fill="x", padx=18, pady=6)
+    import tkinter as tk
 
-    COL_W = 82   # ancho fijo por celda
+    COL_W = 82
+    n_cols = len(columnas) + 1
 
-    def celda(frame, texto, bg, fg, font=FONT_BODY, row=0, col=0, bold=False):
-        f = ctk.CTkFrame(frame, fg_color=bg, corner_radius=0,
-                         border_width=0)
+    # Contenedor externo
+    outer = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=10,
+                         border_width=1, border_color=BORDER_COLOR)
+    outer.pack(fill="x", padx=18, pady=6)
+
+    # Canvas con scrollbar horizontal
+    canvas = tk.Canvas(outer, bg=BG_MAIN, highlightthickness=0)
+    style = ttk.Style()
+    style.theme_use("clam")
+
+    style.configure(
+        "Custom.Horizontal.TScrollbar",
+        background="#2a2f45",
+        troughcolor="#1e2233",
+        bordercolor="#1e2233",
+        lightcolor="#2a2f45",
+        darkcolor="#2a2f45",
+        arrowcolor="#aaaaaa",
+        gripcount=0,
+        relief="flat",
+        borderwidth=0
+    )
+
+    style.map(
+        "Custom.Horizontal.TScrollbar",
+        background=[
+            ("active", "#4a5170"),
+            ("!active", "#2a2f45")
+        ]
+    )
+
+    scrollbar = ttk.Scrollbar(
+        outer,
+        orient="horizontal",
+        command=canvas.xview,
+        style="Custom.Horizontal.TScrollbar"
+    )
+    scrollbar.pack(side="bottom", fill="x")
+    canvas.pack(side="top", fill="both", expand=True, padx=8, pady=(8, 0))
+    canvas.configure(xscrollcommand=scrollbar.set)
+
+    # Frame interno dentro del canvas
+    grid_frame = ctk.CTkFrame(canvas, fg_color=BG_MAIN, corner_radius=8)
+    canvas.create_window((0, 0), window=grid_frame, anchor="nw")
+
+    def celda(frame, texto, bg, fg, font=FONT_BODY, row=0, col=0):
+        f = ctk.CTkFrame(frame, fg_color=bg, corner_radius=0, border_width=0)
         f.grid(row=row, column=col, sticky="nsew", padx=1, pady=1)
         f.grid_columnconfigure(0, minsize=COL_W)
-        ctk.CTkLabel(f, text=texto, font=font if not bold else FONT_HEAD,
+        ctk.CTkLabel(f, text=texto, font=font,
                      text_color=fg, anchor="center",
                      padx=6, pady=6).pack(fill="both", expand=True)
 
-    total_filas = len(variables_basicas) + 2  # cabecera + filas + fila W/Z
+    total_filas = len(variables_basicas) + 2
 
-    grid = ctk.CTkFrame(container, fg_color=BG_MAIN, corner_radius=8)
-    grid.pack(padx=8, pady=8, fill="both", expand=True)
-
-    n_cols = len(columnas) + 1  # +1 para columna BV
-
-    # Configurar pesos de filas para que tengan altura real
     for r in range(total_filas):
-        grid.grid_rowconfigure(r, weight=1, minsize=36)
+        grid_frame.grid_rowconfigure(r, weight=1, minsize=36)
+    for c in range(n_cols):
+        grid_frame.grid_columnconfigure(c, weight=1, minsize=COL_W)
 
-    # ── Cabecera ──
-    celda(grid, "Xb", BG_TABLE_HEAD, TEXT_HEAD, FONT_HEAD, row=0, col=0)
+    # Cabecera
+    celda(grid_frame, "Xb", BG_TABLE_HEAD, TEXT_HEAD, FONT_HEAD, row=0, col=0)
     for j, col in enumerate(columnas):
         bg = BG_PIVOT_COL if col_pivote_idx is not None and j == col_pivote_idx else BG_TABLE_HEAD
         fg = TEXT_GOLD if col_pivote_idx is not None and j == col_pivote_idx else TEXT_HEAD
-        celda(grid, col, bg, fg, FONT_HEAD, row=0, col=j + 1)
+        celda(grid_frame, col, bg, fg, FONT_HEAD, row=0, col=j + 1)
 
-    # ── Filas de la matriz ──
+    # Filas de la matriz
     for f, vb in enumerate(variables_basicas):
         bg_row = BG_TABLE_ALT if f % 2 else BG_TABLE_ROW
-        celda(grid, vb, bg_row, TEXT_PURPLE, FONT_BODY, row=f + 1, col=0)
+        celda(grid_frame, vb, bg_row, TEXT_PURPLE, FONT_BODY, row=f + 1, col=0)
         for j in range(len(columnas)):
             es_pivot_col = col_pivote_idx is not None and j == col_pivote_idx
             es_pivot_cel = es_pivot_col and fila_pivote_idx is not None and f == fila_pivote_idx
             if es_pivot_cel:
-                bg = BG_PIVOT_CELL
-                fg = TEXT_GOLD
+                bg = BG_PIVOT_CELL; fg = TEXT_GOLD
             elif es_pivot_col:
-                bg = BG_PIVOT_COL
-                fg = TEXT_PRIMARY
+                bg = BG_PIVOT_COL; fg = TEXT_PRIMARY
             else:
-                bg = bg_row
-                fg = TEXT_PRIMARY
-            val = fmt(matriz[f][j])
-            celda(grid, val, bg, fg, FONT_BODY, row=f + 1, col=j + 1)
+                bg = bg_row; fg = TEXT_PRIMARY
+            celda(grid_frame, fmt(matriz[f][j]), bg, fg, FONT_BODY, row=f + 1, col=j + 1)
 
-    # ── Fila W / Z ──
-    celda(grid, label_extra, BG_W_ROW, TEXT_BLUE, FONT_HEAD, row=total_filas - 1, col=0)
+    # Fila W / Z
+    celda(grid_frame, label_extra, BG_W_ROW, TEXT_BLUE, FONT_HEAD, row=total_filas - 1, col=0)
     for j in range(len(columnas)):
-        val = fmt(fila_extra[j])
         es_pivot_col = col_pivote_idx is not None and j == col_pivote_idx
         bg = BG_PIVOT_COL if es_pivot_col else BG_W_ROW
         fg = TEXT_GOLD if es_pivot_col else TEXT_BLUE
-        celda(grid, val, bg, fg, FONT_BODY, row=total_filas - 1, col=j + 1)
+        celda(grid_frame, fmt(fila_extra[j]), bg, fg, FONT_BODY, row=total_filas - 1, col=j + 1)
 
-    # Configurar pesos de columnas
-    for c in range(n_cols):
-        grid.grid_columnconfigure(c, weight=1, minsize=COL_W)
+    # Actualizar scroll region y alto del canvas
+    def actualizar_scroll(event=None):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        canvas.configure(height=grid_frame.winfo_reqheight() + 4)
 
-    # Forzar recalculo de geometría para que el ScrollableFrame mida bien la tabla
-    container.update_idletasks()
+    grid_frame.bind("<Configure>", actualizar_scroll)
 
-    return container
+    outer.update_idletasks()
+    return outer
 
 
 def mostrar_pivote_info(parent, col_entra, fila_sale, pivote):
@@ -418,7 +424,7 @@ def metodo_dos_fases(contenedor, datos):
 
         # Determinar si hay pivote en esta iteración
         hay_pivote = indice_pivote is not None
-        if hay_pivote:
+        if hay_pivote and indice_pivote is not None:
             if tipo == "min" and fila_w[indice_pivote] <= 0:
                 hay_pivote = False
             if tipo == "max" and fila_w[indice_pivote] >= 0:
@@ -440,7 +446,8 @@ def metodo_dos_fases(contenedor, datos):
 
         if not hay_pivote:
             break
-
+        if indice_pivote is None:
+            break
         columna_pivote = columnas[indice_pivote]
         if fila_pivote_idx is None:
             advertencia(scroll,
@@ -498,7 +505,7 @@ def metodo_dos_fases(contenedor, datos):
         indice_pivote = obtener_columna_pivote(fila_z, columnas, fase=2, tipo_optimizacion=tipo)
 
         hay_pivote = indice_pivote is not None
-        if hay_pivote:
+        if hay_pivote and indice_pivote is not None:
             if tipo == "min" and fila_z[indice_pivote] <= 0:
                 hay_pivote = False
             if tipo == "max" and fila_z[indice_pivote] >= 0:
@@ -524,6 +531,8 @@ def metodo_dos_fases(contenedor, datos):
             optimo.pack(padx=18, pady=6, anchor="w")
             break
 
+        if indice_pivote is None:
+            break
         columna_pivote = columnas[indice_pivote]
         if fila_pivote_idx is None:
             advertencia(scroll,

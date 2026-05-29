@@ -31,7 +31,7 @@ app = ctk.CTk()
 
 app.title("Investigación de Operaciones")
 app.geometry("1400x900")
-app.minsize(1200, 800)
+app.minsize(900, 600)
 app.resizable(True, True)
 
 # ==========================================
@@ -58,10 +58,6 @@ def limpiar_frame(frame):
 def verificar_variables(*args):
     valor = variables_texto.get()
 
-    # ======================================
-    # CAMPO VACÍO
-    # ======================================
-
     if valor == "":
         r_grafico.configure(state="normal")
         mensaje_estado.configure(
@@ -69,10 +65,6 @@ def verificar_variables(*args):
             text_color="white"
         )
         return
-
-    # ======================================
-    # VALIDACIÓN NUMÉRICA
-    # ======================================
 
     if not es_entero_positivo(valor):
         mensaje_estado.configure(
@@ -83,10 +75,6 @@ def verificar_variables(*args):
 
     cantidad_variables = int(valor)
 
-    # ======================================
-    # VALIDAR MÉTODO GRÁFICO
-    # ======================================
-
     if not validar_metodo_grafico(cantidad_variables):
         r_grafico.configure(state="disabled")
         metodo_escogido.set("dos_fases")
@@ -94,7 +82,6 @@ def verificar_variables(*args):
             text="Método gráfico deshabilitado para más de 2 variables",
             text_color="orange"
         )
-
     else:
         r_grafico.configure(state="normal")
         mensaje_estado.configure(
@@ -111,19 +98,12 @@ def confirmar():
     variables = entry_variables.get()
     restricciones = entry_restricciones.get()
 
-    # ======================================
-    # VALIDAR CAMPOS VACÍOS
-    # ======================================
     if variables == "" or restricciones == "":
         mensaje_estado.configure(
             text="Complete todos los campos",
             text_color="red"
         )
         return
-
-    # ======================================
-    # VALIDAR VARIABLES
-    # ======================================
 
     if not es_entero_positivo(variables):
         mensaje_estado.configure(
@@ -132,9 +112,6 @@ def confirmar():
         )
         return
 
-    # ======================================
-    # VALIDAR RESTRICCIONES
-    # ======================================
     if not es_entero_positivo(restricciones):
         mensaje_estado.configure(
             text="Número de restricciones inválido",
@@ -142,20 +119,11 @@ def confirmar():
         )
         return
 
-    # ======================================
-    # CONVERTIR A ENTEROS
-    # ======================================
     variables = int(variables)
     restricciones = int(restricciones)
 
-    # ======================================
-    # LIMPIAR FORMULARIO
-    # ======================================
     limpiar_frame(frame_formulario)
 
-    # ======================================
-    # GENERAR FORMULARIO
-    # ======================================
     generar_formulario(
         frame_formulario,
         variables,
@@ -167,6 +135,7 @@ def confirmar():
         text="Formulario generado correctamente",
         text_color="lightgreen"
     )
+
     btn_resolver = ctk.CTkButton(
         frame_formulario,
         text="Resolver",
@@ -175,14 +144,13 @@ def confirmar():
         font=("Arial", 18, "bold"),
         command=resolver
     )
-    btn_resolver.pack(
-        padx=10,
-        pady=20
-    )
+    btn_resolver.pack(padx=10, pady=20)
+
 
 # ==========================================
 # RESOLVER
 # ==========================================
+
 def resolver():
     datos = obtener_datos(tipo_problema.get())
     metodo = metodo_escogido.get()
@@ -203,6 +171,7 @@ def resolver():
 # ==========================================
 # LIMPIAR
 # ==========================================
+
 def limpiar():
     entry_variables.delete(0, "end")
     entry_restricciones.delete(0, "end")
@@ -219,21 +188,13 @@ def limpiar():
 # TRACE
 # ==========================================
 
-variables_texto.trace_add(
-    "write",
-    verificar_variables
-)
+variables_texto.trace_add("write", verificar_variables)
 
 # ==========================================
 # HEADER
 # ==========================================
 
-header = ctk.CTkFrame(
-    app,
-    height=100,
-    corner_radius=0
-)
-
+header = ctk.CTkFrame(app, height=100, corner_radius=0)
 header.pack(fill="x")
 
 titulo = ctk.CTkLabel(
@@ -241,25 +202,32 @@ titulo = ctk.CTkLabel(
     text="Método Gráfico y Dos Fases",
     font=("Arial", 42, "bold")
 )
-
 titulo.pack(pady=25)
 
 # ==========================================
-# FRAME PRINCIPAL
+# CONTENEDOR PRINCIPAL (grid de 2 columnas)
 # ==========================================
 
-frame_principal = ctk.CTkFrame(
-    app,
-    corner_radius=20
-)
+frame_contenedor = ctk.CTkFrame(app, fg_color="transparent")
+frame_contenedor.pack(fill="both", expand=True, padx=20, pady=20)
 
-frame_principal.pack(
-    padx=20,
-    pady=20,
-    fill="both",
-    side="left",
-    expand=True
+# Columna 0: panel izquierdo fijo, columna 1: formulario se expande
+frame_contenedor.grid_columnconfigure(0, weight=0, minsize=340)
+frame_contenedor.grid_columnconfigure(1, weight=1)
+frame_contenedor.grid_rowconfigure(0, weight=1)
+
+# ==========================================
+# PANEL IZQUIERDO con scroll
+# ==========================================
+
+scroll_izq = ctk.CTkScrollableFrame(
+    frame_contenedor,
+    corner_radius=20,
+    width=420
 )
+scroll_izq.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+
+frame_principal = scroll_izq  # todos los widgets van directo aquí
 
 # ==========================================
 # CONFIGURACIÓN
@@ -268,162 +236,112 @@ frame_principal.pack(
 lbl_configuracion = ctk.CTkLabel(
     frame_principal,
     text="Configuración del Problema",
-    font=("Arial", 30, "bold")
+    font=("Arial", 26, "bold")
 )
-
-lbl_configuracion.pack(
-    pady=(25, 25)
-)
+lbl_configuracion.pack(pady=(25, 20))
 
 # ==========================================
-# FRAME ENTRADAS
+# FRAME ENTRADAS (en columna vertical)
 # ==========================================
 
-frame_inputs = ctk.CTkFrame(
-    frame_principal,
-    fg_color="transparent"
-)
-
-frame_inputs.pack()
-
-# ==========================================
-# VARIABLES
-# ==========================================
+frame_inputs = ctk.CTkFrame(frame_principal, fg_color="transparent")
+frame_inputs.pack(fill="x", padx=20)
 
 lbl_variables = ctk.CTkLabel(
     frame_inputs,
     text="Número de variables",
-    font=("Arial", 20)
+    font=("Arial", 18)
 )
-
-lbl_variables.grid(
-    row=0,
-    column=0,
-    padx=20,
-    pady=10
-)
+lbl_variables.pack(pady=(5, 2))
 
 entry_variables = ctk.CTkEntry(
     frame_inputs,
-    width=220,
     height=45,
-    font=("Arial", 20),
+    font=("Arial", 18),
     textvariable=variables_texto
 )
-
-entry_variables.grid(
-    row=1,
-    column=0,
-    padx=20
-)
-
-# ==========================================
-# RESTRICCIONES
-# ==========================================
+entry_variables.pack(fill="x")
 
 lbl_restricciones = ctk.CTkLabel(
     frame_inputs,
     text="Número de restricciones",
-    font=("Arial", 20)
+    font=("Arial", 18)
 )
-
-lbl_restricciones.grid(
-    row=0,
-    column=1,
-    padx=20,
-    pady=10
-)
+lbl_restricciones.pack(pady=(12, 2))
 
 entry_restricciones = ctk.CTkEntry(
     frame_inputs,
-    width=220,
     height=45,
-    font=("Arial", 20)
+    font=("Arial", 18)
 )
-
-entry_restricciones.grid(
-    row=1,
-    column=1,
-    padx=20
-)
+entry_restricciones.pack(fill="x")
 
 # ==========================================
 # MÉTODOS
 # ==========================================
 
-frame_metodos = ctk.CTkFrame(
-    frame_principal
-)
-
-frame_metodos.pack(
-    pady=30,
-    padx=30
-)
+frame_metodos = ctk.CTkFrame(frame_principal)
+frame_metodos.pack(pady=20, padx=20, fill="x")
 
 lbl_metodo = ctk.CTkLabel(
     frame_metodos,
     text="Método de resolución",
-    font=("Arial", 24, "bold")
+    font=("Arial", 20, "bold")
 )
-
-lbl_metodo.pack(pady=15)
+lbl_metodo.pack(pady=12)
 
 r_grafico = ctk.CTkRadioButton(
     frame_metodos,
     text="Método Gráfico",
     variable=metodo_escogido,
     value="grafico",
-    font=("Arial", 18)
+    font=("Arial", 16)
 )
-
-r_grafico.pack(pady=8)
+r_grafico.pack(pady=6)
 
 r_dos_fases = ctk.CTkRadioButton(
     frame_metodos,
     text="Método Dos Fases",
     variable=metodo_escogido,
     value="dos_fases",
-    font=("Arial", 18)
+    font=("Arial", 16)
 )
-
-r_dos_fases.pack(pady=8)
+r_dos_fases.pack(pady=6)
 
 # ==========================================
 # TIPO DE PROBLEMA
 # ==========================================
 
-frame_tipo = ctk.CTkFrame(
-    frame_principal
-)
-frame_tipo.pack(
-    pady=30,
-    padx=30,
-)
+frame_tipo = ctk.CTkFrame(frame_principal)
+frame_tipo.pack(pady=20, padx=20, fill="x")
 
 lbl_tipo = ctk.CTkLabel(
     frame_tipo,
     text="Tipo de problema",
-    font=("Arial", 24, "bold")
+    font=("Arial", 20, "bold")
 )
-lbl_tipo.pack(pady=15)
+lbl_tipo.pack(pady=12)
+
+frame_tipo_botones = ctk.CTkFrame(frame_tipo, fg_color="transparent")
+frame_tipo_botones.pack(pady=5)
 
 t_max = ctk.CTkRadioButton(
-    frame_tipo,
+    frame_tipo_botones,
     text="Maximización",
     variable=tipo_problema,
     value="max",
-    font=("Arial", 18)
+    font=("Arial", 16)
 )
-t_max.pack(pady=8, side="left", padx=10)
+t_max.pack(side="left", padx=15)
 
 t_min = ctk.CTkRadioButton(
-    frame_tipo,
+    frame_tipo_botones,
     text="Minimización",
     variable=tipo_problema,
     value="min",
-    font=("Arial", 18)
+    font=("Arial", 16)
 )
-t_min.pack(pady=8, side="left", padx=10)
+t_min.pack(side="left", padx=15)
 
 # ==========================================
 # ESTADO
@@ -432,70 +350,46 @@ t_min.pack(pady=8, side="left", padx=10)
 mensaje_estado = ctk.CTkLabel(
     frame_principal,
     text="Configure el problema",
-    font=("Arial", 16, "bold")
+    font=("Arial", 15, "bold")
 )
-
 mensaje_estado.pack(pady=10)
 
 # ==========================================
 # BOTONES
 # ==========================================
 
-frame_botones = ctk.CTkFrame(
-    frame_principal,
-    fg_color="transparent"
-)
-
-frame_botones.pack(pady=20)
+frame_botones = ctk.CTkFrame(frame_principal, fg_color="transparent")
+frame_botones.pack(pady=15, padx=20, fill="x")
 
 btn_confirmar = ctk.CTkButton(
     frame_botones,
     text="Generar Formulario",
-    width=220,
     height=50,
-    font=("Arial", 18, "bold"),
+    font=("Arial", 16, "bold"),
     command=confirmar
 )
-
-btn_confirmar.pack(
-    side="left",
-    padx=10
-)
+btn_confirmar.pack(fill="x", pady=(0, 8))
 
 btn_limpiar = ctk.CTkButton(
     frame_botones,
     text="Limpiar",
-    width=220,
     height=50,
-    font=("Arial", 18, "bold"),
+    font=("Arial", 16, "bold"),
     fg_color="#8B0000",
     hover_color="#5E0000",
     command=limpiar
 )
-
-btn_limpiar.pack(
-    side="left",
-    padx=10
-)
+btn_limpiar.pack(fill="x")
 
 # ==========================================
-# FORMULARIO DINÁMICO
+# FORMULARIO DINÁMICO (panel derecho)
 # ==========================================
 
 frame_formulario = ctk.CTkScrollableFrame(
-    app,
-    width=1150,
-    height=300,
+    frame_contenedor,
     corner_radius=15
 )
-
-frame_formulario.pack(
-    pady=20,
-    padx=20,
-    fill="both",
-    side = "left",
-    expand=True
-)
+frame_formulario.grid(row=0, column=1, sticky="nsew")
 
 
 # ==========================================

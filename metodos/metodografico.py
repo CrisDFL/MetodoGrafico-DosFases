@@ -10,41 +10,22 @@ from scipy.spatial import ConvexHull
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.patches as mpatches
+from ui.estilo import (
+    BG_MAIN, BG_CARD, BG_TABLE_ROW, BG_TABLE_ALT, BG_RESULT,
+    TEXT_PRIMARY, TEXT_SECONDARY, TEXT_ACCENT, TEXT_GOLD,
+    TEXT_GREEN, TEXT_RED, TEXT_BLUE, TEXT_HEAD,
+    BORDER_COLOR, BORDER_ACCENT,
+    FONT_TITLE, FONT_HEAD, FONT_BODY, FONT_SMALL, FONT_LABEL, FONT_RESULT
+)
 
-# ── Paleta de colores (igual que dos fases) ───────────────────────────
-BG_MAIN       = "#0f1117"
-BG_CARD       = "#1a1d27"
-BG_TABLE_HEAD = "#1e2235"
-BG_TABLE_ROW  = "#151825"
-BG_TABLE_ALT  = "#191c2a"
-BG_RESULT     = "#0d1f0d"
-
-TEXT_PRIMARY   = "#e8eaf0"
-TEXT_SECONDARY = "#8b92a8"
-TEXT_ACCENT    = "#64d8cb"
-TEXT_GOLD      = "#ffd166"
-TEXT_GREEN     = "#6fcf97"
-TEXT_RED       = "#eb5757"
-TEXT_BLUE      = "#7eb8f7"
-TEXT_HEAD      = "#a8b4cc"
-
-BORDER_COLOR  = "#2a2f45"
-BORDER_ACCENT = "#3d4a6b"
-
-FONT_TITLE  = ("JetBrains Mono", 15, "bold")
-FONT_HEAD   = ("JetBrains Mono", 12, "bold")
-FONT_BODY   = ("JetBrains Mono", 12)
-FONT_SMALL  = ("JetBrains Mono", 11)
-FONT_LABEL  = ("JetBrains Mono", 13, "bold")
-FONT_RESULT = ("JetBrains Mono", 14, "bold")
 
 # Colores de matplotlib para la gráfica (dark mode)
-MPL_BG        = "#0f1117"
-MPL_AX_BG     = "#1a1d27"
-MPL_GRID      = "#2a2f45"
-MPL_TEXT      = "#a8b4cc"
-MPL_OPTIMO    = "#ffd166"
-MPL_REGION    = "#64d8cb"
+MPL_BG        = BG_MAIN
+MPL_AX_BG     = BG_CARD
+MPL_GRID      = BORDER_COLOR
+MPL_TEXT      = TEXT_HEAD
+MPL_OPTIMO    = TEXT_GOLD
+MPL_REGION    = TEXT_ACCENT
 MPL_COLORES   = ["#7eb8f7", "#6fcf97", "#c084fc", "#eb5757",
                  "#ffd166", "#64d8cb", "#f97316", "#a78bfa"]
 
