@@ -15,14 +15,12 @@ simbolos_restricciones = []
 # ======================================
 
 def fila_scrollable(contenedor, height=60):
-    """
-    Devuelve un frame interior dentro de un canvas con scroll horizontal.
-    Los widgets se agregan al frame devuelto con pack(side='left').
-    """
     outer = ctk.CTkFrame(contenedor, fg_color="transparent")
     outer.pack(fill="x", pady=5, padx=10)
 
     canvas = tk.Canvas(outer, bg="#2b2b2b", highlightthickness=0, height=height)
+    canvas.pack(side="top", fill="both", expand=True)
+
     scrollbar = tk.Scrollbar(
         outer,
         orient="horizontal",
@@ -34,18 +32,31 @@ def fila_scrollable(contenedor, height=60):
         bd=0,
         width=8
     )
-    scrollbar.pack(side="bottom", fill="x")
-    canvas.pack(side="top", fill="both", expand=True)
-    canvas.configure(xscrollcommand=scrollbar.set)
 
     inner = ctk.CTkFrame(canvas, fg_color="transparent")
-    canvas.create_window((0, 0), window=inner, anchor="nw")
+    window_id = canvas.create_window((0, 0), window=inner, anchor="nw")
+    canvas.configure(xscrollcommand=scrollbar.set)
 
     def actualizar_scroll(event=None):
         canvas.configure(scrollregion=canvas.bbox("all"))
         canvas.configure(height=inner.winfo_reqheight() + 4)
 
+        contenido_ancho = inner.winfo_reqwidth()
+        canvas_ancho = canvas.winfo_width()
+
+        if contenido_ancho > canvas_ancho:
+            # Contenido no cabe: alinear a la izquierda y mostrar scrollbar
+            canvas.coords(window_id, 0, 0)
+            canvas.itemconfig(window_id, anchor="nw")
+            scrollbar.pack(side="bottom", fill="x")
+        else:
+            # Contenido cabe: centrar y ocultar scrollbar
+            canvas.coords(window_id, canvas_ancho // 2, 0)
+            canvas.itemconfig(window_id, anchor="n")
+            scrollbar.pack_forget()
+
     inner.bind("<Configure>", actualizar_scroll)
+    canvas.bind("<Configure>", actualizar_scroll)
 
     return inner
 
