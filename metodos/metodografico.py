@@ -3,13 +3,13 @@
 # ======================================
 
 from itertools import combinations
+from fractions import Fraction
 
 import customtkinter as ctk
 import numpy as np
 from scipy.spatial import ConvexHull
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.patches as mpatches
 from ui.estilo import (
     BG_MAIN, BG_CARD, BG_TABLE_ROW, BG_TABLE_ALT, BG_RESULT,
     TEXT_PRIMARY, TEXT_SECONDARY, TEXT_ACCENT, TEXT_GOLD,
@@ -17,7 +17,6 @@ from ui.estilo import (
     BORDER_COLOR, BORDER_ACCENT,
     FONT_TITLE, FONT_HEAD, FONT_BODY, FONT_SMALL, FONT_LABEL, FONT_RESULT
 )
-
 
 # Colores de matplotlib para la gráfica (dark mode)
 MPL_BG        = BG_MAIN
@@ -30,9 +29,8 @@ MPL_COLORES   = ["#7eb8f7", "#6fcf97", "#c084fc", "#eb5757",
                  "#ffd166", "#64d8cb", "#f97316", "#a78bfa"]
 
 
-# ── Helpers visuales (mismos que dos fases) ───────────────────────────
+# ── Helpers visuales ──────────────────────────────────────────────────
 def seccion_titulo(parent, texto, color=TEXT_ACCENT):
-    """Línea separadora con texto centrado, sin contenedor propio."""
     ctk.CTkFrame(parent, fg_color="transparent", height=10).pack()
     ctk.CTkFrame(parent, fg_color=BORDER_ACCENT, height=1,
                  corner_radius=0).pack(fill="x", padx=18)
@@ -49,7 +47,6 @@ def separador(parent):
 
 
 def badge(parent, texto, color_bg, color_fg):
-    """Pastilla de color para resaltar datos clave."""
     f = ctk.CTkFrame(parent, fg_color=color_bg, corner_radius=6)
     f.pack(side="left", padx=4, pady=4)
     ctk.CTkLabel(f, text=texto, font=FONT_SMALL, text_color=color_fg,
@@ -57,31 +54,33 @@ def badge(parent, texto, color_bg, color_fg):
 
 
 def tarjeta(parent, fill="x", pady=4):
-    """Frame con estilo de tarjeta oscura."""
     f = ctk.CTkFrame(parent, fg_color=BG_CARD, corner_radius=8,
                      border_width=1, border_color=BORDER_COLOR)
     f.pack(fill=fill, padx=18, pady=pady)
     return f
 
 
-def fila_dato(parent, etiqueta, valor, color_val=TEXT_PRIMARY):
-    """Fila con etiqueta y valor en la misma línea."""
-    f = ctk.CTkFrame(parent, fg_color="transparent")
-    f.pack(anchor="w", padx=16, pady=2)
-    ctk.CTkLabel(f, text=etiqueta, font=FONT_SMALL,
-                 text_color=TEXT_SECONDARY).pack(side="left")
-    ctk.CTkLabel(f, text=valor, font=FONT_LABEL,
-                 text_color=color_val).pack(side="left", padx=6)
+# ── Helpers de fracción ───────────────────────────────────────────────
+def fmt(valor):
+    """Muestra enteros sin decimal"""
+    try:
+        f = Fraction(valor).limit_denominator(1000)
+        if f.denominator == 1:
+            return str(f.numerator)
+        # Si la fracción representa bien el valor, úsala
+        if abs(float(f) - float(valor)) < 1e-9:
+            return f"{f.numerator}/{f.denominator}"
+    except Exception:
+        pass
+    # Fallback a decimal
+    return f"{float(valor):.2f}"
+
+
+def fmt_punto(valor):
+    return fmt(valor)
 
 
 # ── Helpers del método ────────────────────────────────────────────────
-def fmt(valor):
-    """Formatea entero o decimal a 2 cifras."""
-    return f"{int(valor)}" if float(valor).is_integer() else f"{valor:.2f}"
-
-
-#----------------------------------
-# Función para verificar si un punto es factible
 def es_factible(A, B, S, punto):
     resultados = np.dot(A, punto)
     for i in range(len(B)):
@@ -92,7 +91,6 @@ def es_factible(A, B, S, punto):
             if resultados[i] < B[i] - 1e-9:
                 return False
         elif S[i] == "=":
-            # Restricción de igualdad: el punto DEBE estar exactamente sobre la recta
             if abs(resultados[i] - B[i]) > 1e-9:
                 return False
     return all(punto >= -1e-9)
@@ -100,9 +98,7 @@ def es_factible(A, B, S, punto):
 
 # ── Función principal ─────────────────────────────────────────────────
 def metodo_grafico(contenedor, datos):
-    # ======================================
     # LIMPIAR CONTENEDOR
-    # ======================================
     for widget in contenedor.winfo_children():
         widget.destroy()
 
@@ -112,9 +108,9 @@ def metodo_grafico(contenedor, datos):
     r = datos.get("restricciones")
     tipo_opt = datos.get("tipo_optimizacion", "max")
 
-    # ======================================
     # EXTRAER DATOS DE RESTRICCIONES
     # ======================================
+    #EXTRAER DATOS DE RESTRICCIONES
     coheficientes = []
     resultado     = []
     signos        = []
@@ -124,8 +120,8 @@ def metodo_grafico(contenedor, datos):
         resultado.append(restricciones['resultado'])
         signos.append(restricciones['simbolo'])
 
-    A = np.array(coheficientes)
-    B = np.array(resultado)
+    A = np.array(coheficientes, dtype=float)
+    B = np.array(resultado, dtype=float)
     S = np.array(signos)
     n_restricciones = len(A)
 
@@ -162,16 +158,9 @@ def metodo_grafico(contenedor, datos):
                  font=FONT_SMALL, text_color=TEXT_SECONDARY, anchor="w"
                  ).pack(anchor="w", padx=16, pady=(2, 8))
 
-    # ======================================
+    # ── Análisis de restricciones ─────────────────────────────────────
     # GUARDAR VÉRTICES
-    # ======================================
     vertices = []
-    parejas = combinations(range(n_restricciones), 2)
-
-    # ── Sección análisis de restricciones ─────────────────────────────
-    seccion_titulo(contenedor, "⬡  ANÁLISIS DE RESTRICCIONES", TEXT_BLUE)
-
-    #------------------------------------------------------------------------
     # Intersección de cada par de restricciones
     for i, j in combinations(range(n_restricciones), 2):
         A_temp = np.array([A[i], A[j]])
@@ -182,9 +171,9 @@ def metodo_grafico(contenedor, datos):
                 vertices.append(punto)
         except np.linalg.LinAlgError:
             continue
-
-    #------------------------------------------------------------------
     # Intersecciones con los ejes y análisis por restricción
+    seccion_titulo(contenedor, "⬡  ANÁLISIS DE RESTRICCIONES", TEXT_BLUE)
+
     for i in range(n_restricciones):
         r_card = tarjeta(contenedor, pady=3)
 
@@ -204,7 +193,6 @@ def metodo_grafico(contenedor, datos):
                      width=2, height=2).pack(side="left", padx=8)
         ctk.CTkLabel(enc, text=S[i], font=FONT_SMALL,
                      text_color=color_badge[1]).pack(side="left")
-
         # X1 = 0, despeja X2
         if A[i][1] != 0:
             val = B[i] / A[i][1]
@@ -218,7 +206,6 @@ def metodo_grafico(contenedor, datos):
                          ).pack(anchor="w", padx=24, pady=1)
             if factible:
                 vertices.append(punto)
-
         # X2 = 0, despeja X1
         if A[i][0] != 0:
             val = B[i] / A[i][0]
@@ -232,7 +219,6 @@ def metodo_grafico(contenedor, datos):
                          ).pack(anchor="w", padx=24, pady=(1, 8))
             if factible:
                 vertices.append(punto)
-
     # El origen
     origen = np.array([0.0, 0.0])
     orig_card = tarjeta(contenedor, pady=3)
@@ -248,17 +234,10 @@ def metodo_grafico(contenedor, datos):
                      font=FONT_SMALL, text_color=TEXT_RED, anchor="w"
                      ).pack(anchor="w", padx=16, pady=8)
 
-    # ======================================
     # VERIFICAR SI HAY SOLUCIÓN FACTIBLE
-    # Advertencia cuando no hay vértices suficientes para formar región
-    # ======================================
     puntos_unicos = []
     for p in vertices:
-        es_duplicado = False
-        for q in puntos_unicos:
-            if np.linalg.norm(p - q) < 1e-6:
-                es_duplicado = True
-                break
+        es_duplicado = any(np.linalg.norm(p - q) < 1e-6 for q in puntos_unicos)
         if not es_duplicado:
             puntos_unicos.append(p)
 
@@ -267,8 +246,7 @@ def metodo_grafico(contenedor, datos):
         warn_card = ctk.CTkFrame(contenedor, fg_color="#2a0a0a", corner_radius=10,
                                  border_width=2, border_color=TEXT_RED)
         warn_card.pack(fill="x", padx=18, pady=12)
-        ctk.CTkLabel(warn_card,
-                     text="⚠  SIN SOLUCIÓN FACTIBLE",
+        ctk.CTkLabel(warn_card, text="⚠  SIN SOLUCIÓN FACTIBLE",
                      font=("JetBrains Mono", 15, "bold"),
                      text_color=TEXT_RED).pack(pady=(12, 4))
         ctk.CTkLabel(warn_card,
@@ -279,9 +257,7 @@ def metodo_grafico(contenedor, datos):
 
     vertices = puntos_unicos
 
-    # ======================================
-    # EVALUACIÓN DE LA FUNCIÓN OBJETIVO
-    # ======================================
+    # ── Evaluación de la función objetivo ────────────────────────────
     seccion_titulo(contenedor, "⬡  EVALUACIÓN DE LA FUNCIÓN OBJETIVO", TEXT_GOLD)
 
     resultados = []
@@ -290,16 +266,27 @@ def metodo_grafico(contenedor, datos):
                  font=FONT_HEAD, text_color=TEXT_HEAD, anchor="w"
                  ).pack(anchor="w", padx=16, pady=(8, 4))
 
-    for i, punto in enumerate(vertices):
-        z = np.dot(c, punto)
-        resultados.append((punto, z))
-        fila = ctk.CTkFrame(eval_card, fg_color=BG_TABLE_ALT if i % 2 else BG_TABLE_ROW,
+    for idx, punto in enumerate(vertices):
+        # Calcular Z con Fraction para máxima precisión
+        z_frac = sum(Fraction(c[k]).limit_denominator(1000) *
+                     Fraction(punto[k]).limit_denominator(1000)
+                     for k in range(len(c)))
+        z_float = float(z_frac)
+        resultados.append((punto, z_frac, z_float))
+
+        fila = ctk.CTkFrame(eval_card,
+                            fg_color=BG_TABLE_ALT if idx % 2 else BG_TABLE_ROW,
                             corner_radius=6)
         fila.pack(fill="x", padx=12, pady=2)
-        ctk.CTkLabel(fila, text=f"  V{i+1}  ({fmt(punto[0])}, {fmt(punto[1])})",
+
+        x1_str = fmt(punto[0])
+        x2_str = fmt(punto[1])
+        z_str  = fmt(float(z_frac))
+
+        ctk.CTkLabel(fila, text=f"  V{idx+1}  ({x1_str}, {x2_str})",
                      font=FONT_BODY, text_color=TEXT_PRIMARY, anchor="w",
                      width=260).pack(side="left", padx=8, pady=6)
-        ctk.CTkLabel(fila, text=f"Z  =  {fmt(z)}",
+        ctk.CTkLabel(fila, text=f"Z  =  {z_str}",
                      font=FONT_LABEL, text_color=TEXT_BLUE, anchor="w"
                      ).pack(side="left", padx=8)
 
@@ -307,9 +294,9 @@ def metodo_grafico(contenedor, datos):
 
     # ── Resultado óptimo ──────────────────────────────────────────────
     if tipo_opt == "max":
-        punto_optimo, valor_optimo = max(resultados, key=lambda x: x[1])
+        punto_optimo, z_opt_frac, z_opt_float = max(resultados, key=lambda x: x[2])
     else:
-        punto_optimo, valor_optimo = min(resultados, key=lambda x: x[1])
+        punto_optimo, z_opt_frac, z_opt_float = min(resultados, key=lambda x: x[2])
 
     seccion_titulo(contenedor, "★  SOLUCIÓN ÓPTIMA", TEXT_GOLD)
 
@@ -333,13 +320,11 @@ def metodo_grafico(contenedor, datos):
     z_row.pack(pady=(4, 14), padx=16, anchor="w")
     ctk.CTkLabel(z_row, text="Valor óptimo  ",
                  font=FONT_HEAD, text_color=TEXT_SECONDARY).pack(side="left")
-    ctk.CTkLabel(z_row, text=f"Z = {fmt(valor_optimo)}",
+    ctk.CTkLabel(z_row, text=f"Z = {fmt(z_opt_float)}",
                  font=("JetBrains Mono", 16, "bold"),
                  text_color=TEXT_GOLD).pack(side="left")
 
-    # ======================================
-    # GRÁFICA — DARK MODE
-    # ======================================
+    # ── Gráfica ─────────────────────────────────────────────
     seccion_titulo(contenedor, "⬡  GRÁFICA DE LA REGIÓN FACTIBLE", TEXT_ACCENT)
 
     grafica_card = ctk.CTkFrame(contenedor, fg_color=BG_CARD, corner_radius=10,
@@ -349,7 +334,6 @@ def metodo_grafico(contenedor, datos):
     figura = Figure(figsize=(8, 5), facecolor=MPL_BG)
     ax = figura.add_subplot(111)
     ax.set_facecolor(MPL_AX_BG)
-
     # Estilo dark en todos los elementos del eje
     ax.tick_params(colors=MPL_TEXT)
     ax.xaxis.label.set_color(MPL_TEXT)
@@ -367,14 +351,11 @@ def metodo_grafico(contenedor, datos):
     max_y = max(todos_y) * 1.35 + 1
     x_range = np.linspace(0, max_x, 400)
 
-    #------------------------------------------------------------------------------------
     # Dibujar líneas de restricciones
     for i in range(n_restricciones):
         color = MPL_COLORES[i % len(MPL_COLORES)]
-
         # Caso normal: ambos coeficientes distintos de 0
         if A[i][0] != 0 and A[i][1] != 0:
-            # Despejamos X2 en función de X1: X2 = (B - A0*X1) / A1
             y_vals = (B[i] - A[i][0] * x_range) / A[i][1]
             ax.plot(x_range, y_vals, color=color, linewidth=1.8,
                     label=f"R{i+1}: {fmt(A[i][0])}X₁ + {fmt(A[i][1])}X₂ {S[i]} {fmt(B[i])}")
@@ -390,11 +371,8 @@ def metodo_grafico(contenedor, datos):
             x1_val = B[i] / A[i][0]
             ax.axvline(x=x1_val, color=color, linewidth=1.8,
                        label=f"R{i+1}: X₁ {S[i]} {fmt(x1_val)}")
-
-        # Restricción de igualdad: se resalta con línea punteada más gruesa
-        # Es una recta que reduce drasticamente la región factible
+        # Restricción de igualdad
         if S[i] == "=":
-            # Re-dibujar encima con estilo especial para destacar que es igualdad
             if A[i][0] != 0 and A[i][1] != 0:
                 y_vals = (B[i] - A[i][0] * x_range) / A[i][1]
                 ax.plot(x_range, y_vals, color=TEXT_GOLD, linewidth=2.5,
@@ -405,8 +383,7 @@ def metodo_grafico(contenedor, datos):
             elif A[i][1] == 0 and A[i][0] != 0:
                 ax.axvline(x=B[i]/A[i][0], color=TEXT_GOLD,
                            linewidth=2.5, linestyle="--", zorder=5)
-
-    # Dibujar región factible (solo si hay suficientes puntos para ConvexHull)
+    # Dibujar región factible
     puntos_np = np.array(vertices)
     if len(puntos_np) >= 3:
         try:
@@ -425,14 +402,14 @@ def metodo_grafico(contenedor, datos):
                 color=MPL_REGION, linewidth=3, alpha=0.5, zorder=2)
 
     # Marcar los vértices
-    for i, punto in enumerate(vertices):
+    for idx, punto in enumerate(vertices):
         es_optimo = np.allclose(punto, punto_optimo, atol=1e-6)
         color_pt  = MPL_OPTIMO if es_optimo else "#ffffff"
         size_pt   = 10 if es_optimo else 6
         ax.plot(punto[0], punto[1], "o", color=color_pt,
                 markersize=size_pt, zorder=6)
         ax.annotate(
-            f"V{i+1}({fmt(punto[0])}, {fmt(punto[1])})",
+            f"V{idx+1}({fmt(punto[0])}, {fmt(punto[1])})",
             xy=(punto[0], punto[1]),
             xytext=(6, 6),
             textcoords="offset points",
@@ -443,9 +420,9 @@ def metodo_grafico(contenedor, datos):
     # Marcar el punto óptimo con estrella destacada
     ax.plot(punto_optimo[0], punto_optimo[1], "*",
             color=MPL_OPTIMO, markersize=18, zorder=7,
-            label=f"Óptimo: Z={fmt(valor_optimo)}")
+            label=f"Óptimo: Z={fmt(z_opt_float)}")
     ax.annotate(
-        f"ÓPTIMO\nZ = {fmt(valor_optimo)}",
+        f"ÓPTIMO\nZ = {fmt(z_opt_float)}",
         xy=(punto_optimo[0], punto_optimo[1]),
         xytext=(12, 12),
         textcoords="offset points",
@@ -456,14 +433,11 @@ def metodo_grafico(contenedor, datos):
 
     ax.set_xlim(left=0, right=max_x)
     ax.set_ylim(bottom=0, top=max_y)
-
-    leg = ax.legend(loc="upper right", facecolor=BG_CARD,
-                    edgecolor=BORDER_ACCENT, labelcolor=MPL_TEXT,
-                    fontsize=8)
-
+    ax.legend(loc="upper right", facecolor=BG_CARD,
+              edgecolor=BORDER_ACCENT, labelcolor=MPL_TEXT, fontsize=8)
     figura.tight_layout()
 
-    canvas = FigureCanvasTkAgg(figura, master=grafica_card)
-    canvas.draw()
-    canvas.get_tk_widget().configure(bg=MPL_BG)
-    canvas.get_tk_widget().pack(padx=12, pady=12, fill="x")
+    mpl_canvas = FigureCanvasTkAgg(figura, master=grafica_card)
+    mpl_canvas.draw()
+    mpl_canvas.get_tk_widget().configure(bg=MPL_BG)
+    mpl_canvas.get_tk_widget().pack(padx=12, pady=12, fill="x")
